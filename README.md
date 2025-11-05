@@ -155,7 +155,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: your-org/otel-action@v1
+      - uses: imjasonh/gcp-metrics-action@...
         with:
           github-token: ${{ github.token }}
           gcp-service-account-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
@@ -177,7 +177,7 @@ If you have the key file committed (for testing):
 steps:
   - uses: actions/checkout@v4
 
-  - uses: your-org/otel-action@v1
+  - uses: imjasonh/gcp-metrics-action@...
     with:
       github-token: ${{ github.token }}
       gcp-service-account-key-file: github-actions-metrics-key.json
@@ -188,7 +188,7 @@ steps:
 
 ```yaml
 - name: Setup OpenTelemetry Metrics
-  uses: your-org/otel-action@v1
+  uses: imjasonh/gcp-metrics-action@...
   with:
     github-token: ${{ github.token }}
     gcp-service-account-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
@@ -420,7 +420,7 @@ jobs:
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
       # Setup metrics collection (no key file needed)
-      - uses: your-org/otel-action@v1
+      - uses: imjasonh/gcp-metrics-action@...
         with:
           github-token: ${{ github.token }}
           gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
@@ -497,7 +497,7 @@ pre-commit run --all-files
 ### Project Structure
 
 ```
-otel-action/
+/
 ├── action.yml           # Action definition
 ├── index.js             # Main entry point (source)
 ├── post.js              # Post-action (source)
