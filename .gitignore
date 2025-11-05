@@ -32,3 +32,5 @@ temp/
 # Service account keys (do not commit)
 *-key.json
 *.key.json
+
+github-actions-metrics-key.json

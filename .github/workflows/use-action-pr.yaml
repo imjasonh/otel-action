@@ -1,9 +1,8 @@
 name: Use Action
 
 on:
-  push:
+  pull_request_target:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   example:
