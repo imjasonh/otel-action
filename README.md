@@ -1,42 +1,64 @@
-# OpenTelemetry Metrics Exporter for GitHub Actions
+# OpenTelemetry Exporter for GitHub Actions
 
-A GitHub Action that collects workflow step metrics (duration, status) and exports them to Google Cloud Monitoring via OpenTelemetry.
+A GitHub Action that collects workflow step metrics, traces, and logs, and exports them to Google Cloud Observability (Monitoring, Trace, and Logging).
 
 ## Features
 
-- 📊 Collects job and step-level metrics from GitHub Actions workflows
-- ⏱️ Records duration histograms for performance tracking
-- ✅ Tracks success/failure rates with counters
-- 🏷️ Rich metric labels (workflow, job, repository, run info)
-- 🔒 Minimal permissions (Monitoring Metric Writer only)
+- 📊 **Metrics**: Duration histograms and success/failure counters for jobs and steps
+- 🔍 **Traces**: Distributed traces showing job and step execution timeline with parent-child relationships
+- 📝 **Logs**: Complete workflow output (stdout/stderr) with **original timestamps** from when each line was emitted
+- ⏱️ Accurate timing - all data (metrics, traces, logs) uses actual execution timestamps, not post-action time
+- ✅ Automatic error detection (failed steps marked as errors in traces/logs)
+- 🏷️ Rich attributes and labels (workflow, job, repository, run info, step attribution)
+- 🔒 Minimal permissions (only metric writer, trace agent, log writer)
 - 🔄 Always runs (even when steps fail)
 
 ## Setup
 
 ### 1. Create a Google Cloud Service Account
 
-Create a service account with only the permission to write metrics:
+Create a service account with minimal permissions to write metrics and traces:
 
 ```bash
 # Set your GCP project ID
 PROJECT_ID="your-project-id"
 
 # Create the service account
-gcloud iam service-accounts create github-actions-metrics \
-  --display-name="GitHub Actions OpenTelemetry Metrics" \
-  --description="Service account for GitHub Actions to write OpenTelemetry metrics to Cloud Monitoring" \
+gcloud iam service-accounts create github-actions-otel \
+  --display-name="GitHub Actions OpenTelemetry" \
+  --description="Service account for GitHub Actions to export OpenTelemetry metrics and traces" \
   --project="${PROJECT_ID}"
 
-# Grant the Monitoring Metric Writer role
+# Grant required roles
+SA_EMAIL="github-actions-otel@${PROJECT_ID}.iam.gserviceaccount.com"
+
+# For metrics
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
-  --member="serviceAccount:github-actions-metrics@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --member="serviceAccount:${SA_EMAIL}" \
   --role="roles/monitoring.metricWriter" \
   --condition=None
 
+# For traces
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/cloudtrace.agent" \
+  --condition=None
+
+# For logs
+gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/logging.logWriter" \
+  --condition=None
+
 # Create and download a JSON key
-gcloud iam service-accounts keys create github-actions-metrics-key.json \
-  --iam-account="github-actions-metrics@${PROJECT_ID}.iam.gserviceaccount.com"
+gcloud iam service-accounts keys create github-actions-otel-key.json \
+  --iam-account="${SA_EMAIL}"
 ```
+
+**Roles explained:**
+- `roles/monitoring.metricWriter` - Write custom metrics to Cloud Monitoring
+- `roles/cloudtrace.agent` - Write traces to Cloud Trace
+- `roles/logging.logWriter` - Write logs to Cloud Logging
 
 ### 2. Add Service Account Key to GitHub
 
@@ -211,9 +233,11 @@ steps:
     metric-prefix: 'ci.metrics'
 ```
 
-## Metrics Collected
+## Data Collected
 
-### Job Duration
+### Metrics
+
+#### Job Duration
 - **Metric:** `github.actions.job.duration`
 - **Type:** Histogram
 - **Unit:** milliseconds
@@ -229,7 +253,7 @@ steps:
   - `run.number` - Workflow run number
   - `run.attempt` - Run attempt number
 
-### Step Duration
+#### Step Duration
 - **Metric:** `github.actions.step.duration`
 - **Type:** Histogram
 - **Unit:** milliseconds
@@ -239,12 +263,37 @@ steps:
   - `step.status` - Status (completed, in_progress, etc.)
   - `step.conclusion` - Conclusion (success, failure, skipped, etc.)
 
-### Step Count
+#### Step Count
 - **Metric:** `github.actions.step.total`
 - **Type:** Counter
 - **Labels:** Same as step duration
 
-## Viewing Metrics
+### Traces
+
+The action creates distributed traces showing the execution timeline of your workflow:
+
+- **Job Span**: Root span covering the entire job execution
+  - Span name: `Job: {job-name}`
+  - Includes all job attributes (workflow, repository, run info, job status/conclusion)
+  - Marked as error if job fails
+
+- **Step Spans**: Child spans for each workflow step
+  - Span name: `Step: {step-name}`
+  - Parent: Job span (creates hierarchical trace)
+  - Includes all step attributes (name, number, status, conclusion)
+  - Marked as error if step fails
+  - Accurate start/end times from GitHub API
+
+**Benefits:**
+- Visualize workflow execution in Cloud Trace timeline view
+- Identify slow steps at a glance
+- See step dependencies and parallelization
+- Correlate failures across steps
+- Track execution patterns over time
+
+## Viewing Data
+
+### Viewing Metrics
 
 Metrics will appear in Google Cloud Monitoring under custom metrics:
 
@@ -271,6 +320,81 @@ custom.googleapis.com/github.actions/step.total
 | filter metric.step.conclusion = "failure"
 | rate(1m)
 ```
+
+### Viewing Traces
+
+Traces will appear in Google Cloud Trace:
+
+1. Go to **Cloud Console → Trace → Trace Explorer**
+2. You'll see traces for each workflow job execution
+3. Click on a trace to see the timeline:
+   - Job span showing total execution time
+   - Step spans showing individual step durations
+   - Failed steps highlighted in red
+   - Hover over spans to see attributes (workflow name, repository, etc.)
+
+**Trace URL format:**
+```
+https://console.cloud.google.com/traces/list?project=your-project-id
+```
+
+**Benefits of the trace view:**
+- See all steps in a single timeline
+- Identify bottlenecks visually
+- Understand step execution order
+- Correlate metrics with traces for deeper insights
+
+### Logs
+
+The action captures and writes **detailed workflow logs** to Google Cloud Logging:
+
+**What gets logged:**
+- Every line of output from your workflow job (stdout/stderr)
+- Each log line includes its **original timestamp** from when it was emitted
+- Automatic severity detection (ERROR, WARNING, DEBUG, INFO)
+- Step attribution (which step generated each log line)
+
+**Log entries include:**
+- **Timestamp**: Original time when the log line was emitted during the job (not post-action time!)
+- **Message**: The actual log output from the step
+- **Severity**: Auto-detected from log content (::error::, ::warning::, ERROR, WARNING)
+- **Labels**: workflow, repository, run info, job name, step name
+- **Resource type**: `generic_task`
+
+**Fallback:** If detailed logs cannot be fetched, writes summary entries for each job and step.
+
+**Log name:** `github-actions`
+
+**Viewing logs:**
+1. Go to **Cloud Console → Logging → Logs Explorer**
+2. Query: `logName="projects/your-project-id/logs/github-actions"`
+3. Filter by repository, workflow, job, or step using labels
+
+**Example queries:**
+
+View all logs from a specific run:
+```
+logName="projects/your-project-id/logs/github-actions"
+labels.run_number="42"
+```
+
+Find errors during the workflow:
+```
+logName="projects/your-project-id/logs/github-actions"
+severity=ERROR
+```
+
+View logs for a specific step:
+```
+logName="projects/your-project-id/logs/github-actions"
+labels.step="npm test"
+```
+
+**Benefits:**
+- Complete workflow output preserved with accurate timestamps
+- Search and filter logs by step, workflow, repository
+- Correlate log errors with trace spans and metrics
+- Historical log retention in Cloud Logging (not just GitHub's 90 days)
 
 ## Alternative: Using Workload Identity Federation (Recommended)
 
