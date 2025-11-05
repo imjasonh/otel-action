@@ -1,0 +1,40 @@
+name: 'OpenTelemetry Metrics Exporter'
+description: 'Collects GitHub Actions workflow step metrics and exports them to Google Cloud Monitoring via OpenTelemetry'
+author: 'Jason'
+branding:
+  icon: 'activity'
+  color: 'blue'
+
+inputs:
+  github-token:
+    description: 'GitHub token for API access (typically ${{ secrets.GITHUB_TOKEN }})'
+    required: true
+    default: ${{ github.token }}
+  gcp-project-id:
+    description: 'Google Cloud Project ID where metrics will be exported'
+    required: true
+  gcp-service-account-key:
+    description: 'Google Cloud service account key JSON (alternative to ADC/Workload Identity)'
+    required: false
+  service-name:
+    description: 'Service name for OpenTelemetry resource attributes'
+    required: false
+    default: 'github-actions'
+  service-namespace:
+    description: 'Service namespace for OpenTelemetry resource attributes'
+    required: false
+    default: 'ci'
+  metric-prefix:
+    description: 'Prefix for metric names'
+    required: false
+    default: 'github.actions'
+  export-interval-millis:
+    description: 'Export interval in milliseconds'
+    required: false
+    default: '5000'
+
+runs:
+  using: 'node20'
+  main: 'index.js'
+  post: 'post.js'
+  post-if: 'always()'

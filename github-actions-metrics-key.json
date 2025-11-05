@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "jason-chainguard",
+  "private_key_id": "e36ddd0683fa66490fdd78eeb060e07aee38b315",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCW8n8nbT4eycYG\nrnk/cFvQuY4XB/zS/LeR4NhXlW06S1dsLQ0jcVm5DHyiScP+xZzK6hCMdftLVwrM\nUDoUcDKGa+2hvQYx7jy8XP9A7jAXLDgyG7xk6OPpKS3qvUy5kiZw37X0I/qTo7B7\nfn+7lTI4bjxmEhPHvtN8yk1VY4YgtZiGPzF0spW/NFkmNpKDpWdp9z/mmBkvA810\npnTAXyrH+fkbcyqpfw4f0PjkCegJPjL5XqxgvmfZGGDlIgae3HU1TmRO4xz0xSHN\n5MT1hHX2isb2zYEB6fX1S/WYTXFfjuZjFICTHHSjjQRDv57cmpKezdNjyE/fhC/0\nfMMoji8FAgMBAAECggEAIS7H4xvxxwTmQnvCbb6+gGD6Knf4DU2+8ROzm3Ve4KzF\nWCODOuJlLfffwjFjI7O/ZyATaT1ac9J7rjSIwAt2H/TD9YU/QmSz91ieSGDUM5Pl\n+qX8QVatG4mQ7YSVxEmrp66WKkhqgmA+oLdLTypaMuuQ3YNl08hQZ6N1YqsRRkkv\nA9Av5FO+d24gZYFqDm+2SGFZ0ON/hM2n7BwfoFJjVPvbW/egqCg7Q8Tp/Lfz3UH7\na25bovBTRDF+H1fxm0VFQZUiMqH7A1oOx9DXDrdViRTwjDOXI35J4nC5Gb+Ckej2\n5rfgdpxGYr8NyMhWLsSd3aYX7/0EA4yjZiJ6bPXY9QKBgQDEzO6GLfoeI40Tuny1\nMLxp4Blli1fQEVtTCgdaNC/TLu3fypyTZF/yRHkc9zdyqqGLYZVgZq77CRzX26zS\nK0P0gygGZUnGESGSN0s/FOvjZ/745UqU1yibkIGlurEt/F8m0CT2EnTt+wTo3ssr\nrE8qlIwltor5p4zTDoAZz4AGkwKBgQDEWofrJa0rcka8CU5eeP5WC4RLAi/FVaVE\nUEls8/TaMcUItGqvgszZFJMNay31jWsn01EfdbdkoSEuuCUjVgexUJuuv5t6Xke+\n0iact/N1CO53PvHU2jfLpCl5UAzzED+aDRo8rs41oXOlMmrUHhEl3PIrO2S/qx3Q\n8+J1uIGbBwKBgQCfzUhh7DONBZEo0+Uvu8NCtZXpvpwvd+iQJTSTKo0rDpBZiExb\n4sWGE9PEkXmUwrkqVLLW9IphjaS+IsLSZg9oHJgDmXuuOXrpH70aHALvRSLlOEq3\nUX7H0y9zQ4VbsfIRsjJRHeuU0p/J+B9B90jRao3ikbeHwWW4e63JR5TNwQKBgQCf\n5Pj5y9yQnKZtSUbAN9clSouYaVdtYqkKUDb6uk6RwCWrSP/3nJQj0lVNgBIU++xe\nqf5NmBaXo37aBKp5c/0fr3yXeQCrTUsvYQKAbGucyoEmKePUaT82XaBIYZ+p73lb\ngX/0GoVhtu/tfnjv8uwT4TBzdBI+4qGNHo0zP+SK0QKBgQCFtFtMxi2t665J7tN9\nJpIb4tHvP3DFBWSSegDtUl7LFycEoovOnedkHZDKF+a48tES3GIF5fIquoLYaDxN\nU2AqY6exjmebNvD9kHpK4vD7wFIHgv+LhMDoQ1LyQmv7hXM/ZuiUUtAJoobIa1iV\n3sxuDvENbH68yOjvzkXghcfG6Q==\n-----END PRIVATE KEY-----\n",
+  "client_email": "github-actions-metrics@jason-chainguard.iam.gserviceaccount.com",
+  "client_id": "107797850607299994698",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/github-actions-metrics%40jason-chainguard.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

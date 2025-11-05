@@ -1,0 +1,32 @@
+name: Example Workflow with Metrics
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  example:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gcp-service-account-key: github-actions-metrics-key.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install
+      - run: npm run lint || echo "No lint script configured"
+      - run: npm test
+      - run: echo "Building project..." && sleep 5 && echo "Build complete"
