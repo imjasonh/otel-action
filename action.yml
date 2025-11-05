@@ -30,7 +30,7 @@ inputs:
   export-interval-millis:
     description: 'Export interval in milliseconds'
     required: false
-    default: '5000'
+    default: '1000'
 
 runs:
   using: 'node20'

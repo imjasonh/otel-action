@@ -228,14 +228,18 @@ function recordMetrics(meter, metrics, metricPrefix) {
   };
 
   // Create meters for step metrics
-  const stepDurationHistogram = meter.createHistogram(`${metricPrefix}.step.duration`, {
+  const stepDurationName = `${metricPrefix}.step.duration`;
+  const stepDurationHistogram = meter.createHistogram(stepDurationName, {
     description: 'Duration of workflow steps in milliseconds',
     unit: 'ms',
   });
+  core.debug(`Created histogram metric: ${stepDurationName}`);
 
-  const stepCounter = meter.createCounter(`${metricPrefix}.step.total`, {
+  const stepCounterName = `${metricPrefix}.step.total`;
+  const stepCounter = meter.createCounter(stepCounterName, {
     description: 'Total count of workflow steps by conclusion',
   });
+  core.debug(`Created counter metric: ${stepCounterName}`);
 
   // Record job-level metrics
   if (metrics.job.durationMs > 0) {
@@ -284,11 +288,21 @@ function recordMetrics(meter, metrics, metricPrefix) {
 async function shutdown(meterProvider) {
   core.info('Flushing and shutting down MeterProvider');
   try {
+    core.info('Calling forceFlush...');
     await meterProvider.forceFlush();
+    core.info('forceFlush completed');
+
+    // Add a delay to ensure metrics are fully exported
+    // This gives the exporter time to complete the async export
+    core.info('Waiting 3 seconds for metrics export to complete...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    core.info('Calling shutdown...');
     await meterProvider.shutdown();
     core.info('MeterProvider shut down successfully');
   } catch (error) {
     core.error(`Error during shutdown: ${error.message}`);
+    core.error(`Stack trace: ${error.stack}`);
     throw error;
   }
 }
