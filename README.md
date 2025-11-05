@@ -139,9 +139,9 @@ This action supports two authentication methods:
 - Using `pull_request` from forks? → **Use Service Account Key File**
 - Production workflows on `push`? → **Use Workload Identity Federation**
 
-### Basic Usage (with Service Account Key File)
+### Basic Usage (with Secrets - Recommended)
 
-Add the action as one of the first steps in your workflow. The action will automatically collect metrics in a post-action phase after all other steps complete.
+The simplest approach is to use GitHub Secrets directly:
 
 ```yaml
 name: CI Pipeline
@@ -153,31 +153,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout first
       - uses: actions/checkout@v4
 
-      # Write secret to file
-      - name: Setup GCP credentials
-        run: echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > /tmp/gcp-key.json
-
-      # Enable metrics collection
-      - name: Setup OpenTelemetry Metrics
-        uses: your-org/otel-action@v1
+      - uses: your-org/otel-action@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          gcp-service-account-key-file: /tmp/gcp-key.json
+          github-token: ${{ github.token }}
+          gcp-service-account-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
           # gcp-project-id is automatically extracted from the service account key
-          # You can override it explicitly if needed: gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
 
       # Your regular workflow steps
-      - name: Install dependencies
-        run: npm install
-      - name: Run tests
-        run: npm test
-      - name: Build
-        run: npm run build
+      - run: npm install
+      - run: npm test
+      - run: npm run build
 
-      # Metrics are automatically collected and exported after this job completes
+      # Metrics and traces are automatically collected and exported after this job completes
 ```
 
 ### Alternative: Using Committed Key File
@@ -201,11 +190,11 @@ steps:
 - name: Setup OpenTelemetry Metrics
   uses: your-org/otel-action@v1
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
-    gcp-service-account-key-file: /tmp/gcp-key.json
+    github-token: ${{ github.token }}
+    gcp-service-account-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
     # Optional: Override project ID (defaults to project from service account key)
-    # gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
+    # gcp-project-id: 'my-project-id'
 
     # Optional: Customize service name for resource attributes
     service-name: 'my-app-ci'
