@@ -73,9 +73,6 @@ You have two options:
 You can commit the key file directly:
 
 ```bash
-# Set restrictive permissions (recommended)
-chmod 600 github-actions-metrics-key.json
-
 git add github-actions-metrics-key.json
 git commit -m "Add service account key for metrics"
 git push
@@ -83,25 +80,41 @@ git push
 
 **⚠️ Security Requirements:**
 - **MUST** be a private repository (action will refuse to run in public repos)
-- **Recommended:** File permissions should be `600` (owner read/write only)
 - **Warning:** For production, use GitHub Secrets or Workload Identity Federation instead
 
 The action includes built-in security checks:
-- ✓ Refuses to run if repository is public
-- ✓ Warns if key file has overly permissive file permissions
-- ✓ Verifies service account has ONLY `roles/monitoring.metricWriter`
-- ✓ Errors if service account has excessive permissions
-- ✓ Logs repository visibility status
+- ✓ Refuses to run if repository is public (checked via GitHub API)
+- ✓ **Best-effort:** Verifies service account has ONLY `roles/monitoring.metricWriter`
+- ✓ Errors if excessive permissions are detected
 
 This is mainly intended to be used in `pull_request` workflows where secrets and workload identity federation are not available.
 
 **Service Account Permission Validation:**
 
-The action automatically calls the GCP IAM API to verify that the service account has only the minimal required permissions (`roles/monitoring.metricWriter`). If any additional roles are detected, the action will refuse to run and provide commands to remove the excessive permissions.
+The action attempts to call the GCP IAM API to verify that the service account has only minimal required permissions (`roles/monitoring.metricWriter`).
 
-This ensures the principle of least privilege is followed, even if the key file is accidentally exposed.
+**Important:** This check requires the service account to have `resourcemanager.projects.getIamPolicy` permission, which is **not** included in `roles/monitoring.metricWriter`. Therefore:
 
-*Note:* The service account needs permission to view IAM policies to perform this check. The `roles/monitoring.metricWriter` role includes the necessary `resourcemanager.projects.getIamPolicy` permission. If the check fails due to insufficient permissions, the action will log a warning and proceed without the check.
+- ✅ **If successful:** Will error and refuse to run if excessive permissions are detected
+- ⚠️ **If unsuccessful:** Will log an info message and proceed (this is expected with minimal permissions)
+
+**To enable the permission check** (optional, adds minimal permissions):
+
+```bash
+# Create a custom role with only the getIamPolicy permission
+gcloud iam roles create githubActionsMetricsChecker \
+  --project=jason-chainguard \
+  --title="GitHub Actions Metrics Permission Checker" \
+  --permissions=resourcemanager.projects.getIamPolicy
+
+# Grant it to the service account
+gcloud projects add-iam-policy-binding jason-chainguard \
+  --member="serviceAccount:github-actions-metrics@jason-chainguard.iam.gserviceaccount.com" \
+  --role="projects/jason-chainguard/roles/githubActionsMetricsChecker" \
+  --condition=None
+```
+
+With this optional permission, the action can verify it has no excessive roles and provide specific remediation commands if issues are found.
 
 ## Usage
 
