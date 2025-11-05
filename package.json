@@ -4,7 +4,8 @@
   "description": "GitHub Action that collects workflow step metrics and exports them to OpenTelemetry/Google Cloud Monitoring",
   "main": "index.js",
   "scripts": {
-    "test": "node --test test/collector.test.js test/exporter.test.js"
+    "test": "node --test test/collector.test.js test/exporter.test.js",
+    "build": "ncc build index.js -o dist && ncc build post.js -o dist/post"
   },
   "keywords": [
     "github-actions",
@@ -23,5 +24,7 @@
     "@opentelemetry/sdk-metrics": "^1.28.0",
     "@opentelemetry/semantic-conventions": "^1.28.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.1"
+  }
 }

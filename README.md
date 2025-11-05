@@ -228,13 +228,31 @@ npm install
 npm test
 ```
 
+### Build
+
+The action uses [@vercel/ncc](https://github.com/vercel/ncc) to compile the JavaScript and dependencies into a single file for distribution.
+
+```bash
+npm run build
+```
+
+This creates:
+- `dist/index.js` - Main entry point
+- `dist/post/index.js` - Post-action with all dependencies
+
+**Important:** Always run `npm run build` before committing changes. The `dist/` directory must be committed for the action to work in GitHub Actions.
+
 ### Project Structure
 
 ```
 otel-action/
 ├── action.yml           # Action definition
-├── index.js             # Main entry point (no-op)
-├── post.js              # Post-action (collects & exports metrics)
+├── index.js             # Main entry point (source)
+├── post.js              # Post-action (source)
+├── dist/                # Compiled action (committed)
+│   ├── index.js         # Built main entry
+│   └── post/
+│       └── index.js     # Built post-action
 ├── lib/
 │   ├── config.js        # Configuration parsing
 │   ├── collector.js     # GitHub API metrics collection

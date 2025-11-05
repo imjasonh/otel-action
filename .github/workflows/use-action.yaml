@@ -18,10 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Read service account key
+        id: sa-key
+        run: echo "content=$(cat github-actions-metrics-key.json | jq -c)" >> $GITHUB_OUTPUT
+
       - uses: ./
         with:
           github-token: ${{ github.token }}
-          gcp-service-account-key: github-actions-metrics-key.json
+          gcp-project-id: jason-chainguard
+          gcp-service-account-key: ${{ steps.sa-key.outputs.content }}
 
       - uses: actions/setup-node@v4
         with:

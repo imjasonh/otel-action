@@ -28,3 +28,7 @@ coverage/
 *.log
 tmp/
 temp/
+
+# Service account keys (do not commit)
+*-key.json
+*.key.json
