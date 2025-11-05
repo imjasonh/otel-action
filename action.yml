@@ -1,6 +1,6 @@
-name: 'OpenTelemetry Exporter'
+name: 'GCP Metrics Exporter'
 description: 'Collects GitHub Actions workflow metrics and traces, and exports them to Google Cloud Monitoring and Cloud Trace'
-author: 'Jason'
+author: '@imjasonh'
 branding:
   icon: 'activity'
   color: 'blue'
