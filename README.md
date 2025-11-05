@@ -38,7 +38,11 @@ gcloud iam service-accounts keys create github-actions-metrics-key.json \
   --iam-account="github-actions-metrics@${PROJECT_ID}.iam.gserviceaccount.com"
 ```
 
-### 2. Add Service Account Key to GitHub Secrets
+### 2. Add Service Account Key to GitHub
+
+You have two options:
+
+**Option A: Use GitHub Secrets (Recommended for production)**
 
 1. Copy the contents of the JSON key file:
    ```bash
@@ -64,9 +68,34 @@ gcloud iam service-accounts keys create github-actions-metrics-key.json \
    rm github-actions-metrics-key.json
    ```
 
+**Option B: Commit the key file (For testing/demo only)**
+
+If you're testing in a personal repository, you can commit the key file directly:
+
+```bash
+git add github-actions-metrics-key.json
+git commit -m "Add service account key for metrics"
+git push
+```
+
+**⚠️ Warning:** Only do this in private repositories for testing. For production, always use secrets.
+
 ## Usage
 
-### Basic Usage
+### Authentication Methods
+
+This action supports two authentication methods:
+
+| Method | Best For | Works With | Setup Complexity |
+|--------|----------|------------|------------------|
+| **Service Account Key File** | Testing, forks, `pull_request` events | All workflow events | Simple - just create and store a key |
+| **Workload Identity Federation** | Production, security-conscious | `push`, `pull_request_target` only | Moderate - requires WIF setup |
+
+**Quick Decision:**
+- Using `pull_request` from forks? → **Use Service Account Key File**
+- Production workflows on `push`? → **Use Workload Identity Federation**
+
+### Basic Usage (with Service Account Key File)
 
 Add the action as one of the first steps in your workflow. The action will automatically collect metrics in a post-action phase after all other steps complete.
 
@@ -80,16 +109,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout first
+      - uses: actions/checkout@v4
+
+      # Write secret to file
+      - name: Setup GCP credentials
+        run: echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > /tmp/gcp-key.json
+
       # Enable metrics collection
       - name: Setup OpenTelemetry Metrics
         uses: your-org/otel-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
-          gcp-service-account-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          gcp-service-account-key-file: /tmp/gcp-key.json
 
       # Your regular workflow steps
-      - uses: actions/checkout@v4
       - name: Install dependencies
         run: npm install
       - name: Run tests
@@ -100,6 +135,23 @@ jobs:
       # Metrics are automatically collected and exported after this job completes
 ```
 
+### Alternative: Using Committed Key File
+
+If you have the key file committed (for testing):
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+
+  - uses: your-org/otel-action@v1
+    with:
+      github-token: ${{ github.token }}
+      gcp-project-id: your-project-id
+      gcp-service-account-key-file: path/to/key.json
+
+  # Your workflow steps...
+```
+
 ### Advanced Configuration
 
 ```yaml
@@ -108,7 +160,7 @@ jobs:
   with:
     github-token: ${{ secrets.GITHUB_TOKEN }}
     gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
-    gcp-service-account-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+    gcp-service-account-key-file: /tmp/gcp-key.json
 
     # Optional: Customize service name for resource attributes
     service-name: 'my-app-ci'
@@ -120,7 +172,7 @@ jobs:
     metric-prefix: 'ci.metrics'
 
     # Optional: Adjust export interval (milliseconds)
-    export-interval-millis: '5000'
+    export-interval-millis: '1000'
 ```
 
 ## Metrics Collected
@@ -184,35 +236,73 @@ custom.googleapis.com/github.actions/step.total
 | rate(1m)
 ```
 
-## Alternative: Using Workload Identity Federation
+## Alternative: Using Workload Identity Federation (Recommended)
 
-Instead of service account keys, you can use Workload Identity Federation (recommended for production):
+Instead of service account keys, you can use Workload Identity Federation (WIF). This is the **recommended** approach for production as it doesn't require managing service account key files.
+
+### Important: Workflow Event Limitations
+
+⚠️ **WIF requires `id-token: write` permission, which is only available for:**
+- `push` events
+- `pull_request_target` events (runs in the context of the target repo)
+
+❌ **WIF will NOT work with:**
+- `pull_request` events (runs in the context of the fork, cannot get OIDC tokens)
+
+For pull requests from forks, you must use service account keys instead.
+
+### WIF Configuration
 
 ```yaml
+name: CI with WIF
+
+on:
+  push:
+    branches: [ main ]
+  pull_request_target:  # Use pull_request_target, not pull_request
+    branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      id-token: write
+      id-token: write  # Required for WIF
+      actions: read    # Required to read workflow/job info
 
     steps:
-      - name: Setup OpenTelemetry Metrics
-        uses: your-org/otel-action@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
-          # No service account key needed!
+      - uses: actions/checkout@v4
 
+      # Authenticate with GCP first
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
 
+      # Setup metrics collection (no key file needed)
+      - uses: your-org/otel-action@v1
+        with:
+          github-token: ${{ github.token }}
+          gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
+          # gcp-service-account-key-file is omitted - uses ADC from WIF
+
       # Your workflow steps...
+      - run: npm install
+      - run: npm test
 ```
+
+### Setting Up Workload Identity Federation
+
+1. Create a Workload Identity Pool and Provider in GCP
+2. Grant the service account permissions to the pool
+3. Add secrets to GitHub:
+   - `WIF_PROVIDER`: Full resource name of the workload identity provider
+   - `WIF_SERVICE_ACCOUNT`: Email of the service account
+   - `GCP_PROJECT_ID`: Your GCP project ID
+
+See [Google's documentation](https://github.com/google-github-actions/auth#workload-identity-federation) for detailed setup instructions.
 
 ## Development
 
@@ -240,7 +330,31 @@ This creates:
 - `dist/index.js` - Main entry point
 - `dist/post/index.js` - Post-action with all dependencies
 
-**Important:** Always run `npm run build` before committing changes. The `dist/` directory must be committed for the action to work in GitHub Actions.
+**Important:** The `dist/` directory must be committed for the action to work in GitHub Actions.
+
+### Pre-commit Hooks
+
+This project uses [pre-commit](https://pre-commit.com/) to automatically run tests and build before each commit.
+
+**Setup:**
+
+```bash
+# Install pre-commit (if not already installed)
+brew install pre-commit  # macOS
+# or: pip install pre-commit  # other platforms
+
+# Install the git hook scripts
+pre-commit install
+```
+
+Now `npm test` and `npm run build` will run automatically before each commit. If either fails, the commit will be aborted.
+
+**Manual execution:**
+
+```bash
+# Run hooks on all files
+pre-commit run --all-files
+```
 
 ### Project Structure
 

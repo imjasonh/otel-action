@@ -109,21 +109,36 @@ module.exports = { collectMetrics };
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const core = __nccwpck_require__(37484);
+const fs = __nccwpck_require__(79896);
+const path = __nccwpck_require__(16928);
 
 /**
  * Parses and validates action configuration from inputs
  * @returns {Object} Configuration object
  */
 function getConfig() {
-  const serviceAccountKey = core.getInput('gcp-service-account-key');
+  const serviceAccountKeyFile = core.getInput('gcp-service-account-key-file');
+  let serviceAccountKey = null;
+
+  // Read service account key from file if provided
+  if (serviceAccountKeyFile) {
+    try {
+      const filePath = path.resolve(serviceAccountKeyFile);
+      core.info(`Reading service account key from: ${filePath}`);
+      serviceAccountKey = fs.readFileSync(filePath, 'utf8');
+    } catch (error) {
+      core.error(`Failed to read service account key file: ${error.message}`);
+      throw new Error(`Cannot read service account key file: ${serviceAccountKeyFile}`);
+    }
+  }
 
   const config = {
     gcpProjectId: core.getInput('gcp-project-id', { required: true }),
-    gcpServiceAccountKey: serviceAccountKey || null,
+    gcpServiceAccountKey: serviceAccountKey,
     serviceName: core.getInput('service-name') || 'github-actions',
     serviceNamespace: core.getInput('service-namespace') || 'ci',
     metricPrefix: core.getInput('metric-prefix') || 'github.actions',
-    exportIntervalMillis: parseInt(core.getInput('export-interval-millis') || '5000', 10),
+    exportIntervalMillis: parseInt(core.getInput('export-interval-millis') || '1000', 10),
   };
 
   // Validate configuration
