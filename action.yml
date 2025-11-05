@@ -7,9 +7,8 @@ branding:
 
 inputs:
   github-token:
-    description: 'GitHub token for API access (typically ${{ secrets.GITHUB_TOKEN }})'
+    description: 'GitHub token for API access (use ${{ github.token }} or ${{ secrets.GITHUB_TOKEN }})'
     required: true
-    default: ${{ github.token }}
   gcp-project-id:
     description: 'Google Cloud Project ID where metrics will be exported'
     required: true
