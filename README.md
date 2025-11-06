@@ -234,8 +234,25 @@ steps:
   - `event.name` - Event that triggered workflow (push, pull_request, etc.)
   - `event.actor` - User who triggered the workflow
   - `pull_request.number` - PR number (if applicable) *
+  - `runner.os` - Runner operating system (Linux, Windows, macOS)
+  - `runner.arch` - Runner architecture (X64, ARM64, etc.)
+  - `runner.name` - Runner name *
+  - `runner.label` - Primary runner label (e.g., ubuntu-latest, ubuntu-4-core) *
+  - `estimated_cost_usd` - Estimated cost in USD based on runner type and duration *
 
 \* = Optional attributes, only present when applicable
+
+**Note on cost estimation:** The `estimated_cost_usd` attribute is automatically calculated using GitHub's per-minute pricing:
+- **Standard runners:** Linux: $0.008/min, Windows: $0.016/min, macOS: $0.08/min
+- **Larger runners:** Automatically detected from runner label (e.g., ubuntu-4-cores)
+  - 2-cores: Linux $0.016/min, Windows $0.032/min
+  - 4-cores: Linux $0.032/min, Windows $0.064/min
+  - 8-cores: Linux $0.064/min, Windows $0.128/min
+  - 16-cores: Linux $0.128/min, Windows $0.256/min
+  - 32-cores: Linux $0.256/min, Windows $0.512/min
+  - 64-cores: Linux $0.512/min, Windows $1.024/min
+- **Self-hosted runners:** Cost = $0 (not billed by GitHub)
+- Ref: https://docs.github.com/en/actions/reference/runners/larger-runners
 
 #### Step Duration
 - **Metric:** `github.actions.step.duration`
@@ -355,6 +372,48 @@ custom.googleapis.com/github.actions/artifact.size
 custom.googleapis.com/github.actions/artifact.size
 | group_by [metric.artifact.name]
 | count
+```
+
+**Estimated total CI costs (uses pre-calculated cost attribute):**
+```
+custom.googleapis.com/github.actions/job.duration
+| value [metric.estimated_cost_usd]
+| sum
+```
+
+**Monthly CI costs by runner OS:**
+```
+custom.googleapis.com/github.actions/job.duration
+| group_by [metric.runner.os]
+| value [metric.estimated_cost_usd]
+| sum
+```
+
+**Most expensive workflows:**
+```
+custom.googleapis.com/github.actions/job.duration
+| group_by [metric.workflow.name]
+| value [metric.estimated_cost_usd]
+| sum
+| top 10
+```
+
+**Most expensive jobs:**
+```
+custom.googleapis.com/github.actions/job.duration
+| group_by [metric.job.name, metric.runner.os]
+| value [metric.estimated_cost_usd]
+| sum
+| top 10
+```
+
+**Cost per commit (for specific branch):**
+```
+custom.googleapis.com/github.actions/job.duration
+| filter metric.git.ref_name = "main"
+| group_by [metric.git.sha]
+| value [metric.estimated_cost_usd]
+| sum
 ```
 
 ### Viewing Traces

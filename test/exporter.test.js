@@ -126,6 +126,12 @@ test('recordMetrics', async (t) => {
         actor: 'test-user',
         prNumber: null,
       },
+      runner: {
+        os: 'Linux',
+        arch: 'X64',
+        name: 'Hosted Agent',
+        labels: ['ubuntu-latest'],
+      },
     };
 
     recordMetrics(mockMeter, metrics, 'test.prefix');
@@ -184,6 +190,12 @@ test('recordMetrics', async (t) => {
         actor: 'test-user',
         prNumber: null,
       },
+      runner: {
+        os: 'Linux',
+        arch: 'X64',
+        name: 'Hosted Agent',
+        labels: ['ubuntu-latest'],
+      },
     };
 
     recordMetrics(mockMeter, metrics, 'test.prefix');
@@ -240,6 +252,12 @@ test('recordMetrics', async (t) => {
         name: 'push',
         actor: 'test-user',
         prNumber: null,
+      },
+      runner: {
+        os: 'Linux',
+        arch: 'X64',
+        name: 'Hosted Agent',
+        labels: ['ubuntu-latest'],
       },
     };
 
