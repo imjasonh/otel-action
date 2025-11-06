@@ -155,14 +155,26 @@ steps:
   # Your workflow steps...
 ```
 
+### Project ID Auto-Detection
+
+The action automatically detects the GCP project ID in this order:
+
+1. **Explicit input**: `gcp-project-id` parameter
+2. **Service account key file**: Extracted from `project_id` field in the JSON key
+3. **Environment variable**: `GOOGLE_CLOUD_PROJECT`, `GCLOUD_PROJECT`, or `GCP_PROJECT`
+4. **Application Default Credentials**: Detected from ADC configuration
+
+For most use cases, you don't need to specify `gcp-project-id` explicitly.
+
 ### Advanced Configuration
 
 ```yaml
 - uses: imjasonh/gcp-metrics-action@...
   with:
     github-token: ${{ github.token }}
+    gcp-service-account-key-file: github-actions-metrics-key.json
 
-    # Optional: Override project ID (defaults to project from service account key)
+    # Optional: Override project ID (auto-detected in most cases)
     # gcp-project-id: 'my-project-id'
 
     # Optional: Customize service name for resource attributes
@@ -514,7 +526,7 @@ jobs:
       - uses: imjasonh/gcp-metrics-action@...
         with:
           github-token: ${{ github.token }}
-          gcp-project-id: ${{ secrets.GCP_PROJECT_ID }}
+          # gcp-project-id is auto-detected from ADC
           # gcp-service-account-key-file is omitted - uses ADC from WIF
 
       # Your workflow steps...

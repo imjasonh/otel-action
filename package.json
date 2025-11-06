@@ -1,6 +1,6 @@
 {
   "name": "gcp-metrics-action",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "GitHub Action that exports workflow metrics and traces with accurate timestamps to Google Cloud Monitoring and Cloud Trace",
   "main": "index.js",
   "scripts": {
