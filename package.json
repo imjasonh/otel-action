@@ -4,7 +4,7 @@
   "description": "GitHub Action that exports workflow metrics and traces with accurate timestamps to Google Cloud Monitoring and Cloud Trace",
   "main": "index.js",
   "scripts": {
-    "test": "node --test test/collector.test.js test/exporter.test.js",
+    "test": "node --test test/collector.test.js test/exporter.test.js test/config.test.js",
     "build": "ncc build index.js -o dist && ncc build post.js -o dist/post",
     "lint": "eslint ."
   },
