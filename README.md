@@ -237,22 +237,21 @@ steps:
   - `runner.os` - Runner operating system (Linux, Windows, macOS)
   - `runner.arch` - Runner architecture (X64, ARM64, etc.)
   - `runner.name` - Runner name *
-  - `runner.label` - Primary runner label (e.g., ubuntu-latest, ubuntu-4-core) *
-  - `estimated_cost_usd` - Estimated cost in USD based on runner type and duration *
+  - `runner.label` - Primary runner label (e.g., ubuntu-latest, ubuntu-4-cores) *
 
 \* = Optional attributes, only present when applicable
 
-**Note on cost estimation:** The `estimated_cost_usd` attribute is automatically calculated using GitHub's per-minute pricing:
-- **Standard runners:** Linux: $0.008/min, Windows: $0.016/min, macOS: $0.08/min
-- **Larger runners:** Automatically detected from runner label (e.g., ubuntu-4-cores)
-  - 2-cores: Linux $0.016/min, Windows $0.032/min
-  - 4-cores: Linux $0.032/min, Windows $0.064/min
-  - 8-cores: Linux $0.064/min, Windows $0.128/min
-  - 16-cores: Linux $0.128/min, Windows $0.256/min
-  - 32-cores: Linux $0.256/min, Windows $0.512/min
-  - 64-cores: Linux $0.512/min, Windows $1.024/min
-- **Self-hosted runners:** Cost = $0 (not billed by GitHub)
-- Ref: https://docs.github.com/en/actions/reference/runners/larger-runners
+#### Job Estimated Cost
+- **Metric:** `github.actions.job.estimated_cost`
+- **Type:** Histogram
+- **Unit:** USD
+- **Labels:** Same as job duration
+- **Note:** Only recorded when runner OS is known. Automatically calculates cost based on:
+  - **Standard runners:** Linux: $0.008/min, Windows: $0.016/min, macOS: $0.08/min
+  - **Larger runners:** Detected from runner label (e.g., ubuntu-4-cores, ubuntu-8-cores)
+    - Pricing scales from $0.016/min (2-cores) to $1.024/min (64-cores Windows)
+  - **Self-hosted runners:** Not recorded (cost = $0)
+  - Ref: https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions
 
 #### Step Duration
 - **Metric:** `github.actions.step.duration`
@@ -311,6 +310,7 @@ Metrics will appear in Google Cloud Monitoring under custom metrics:
 2. Search for: `custom.googleapis.com/github.actions`
 3. Available metrics:
    - `custom.googleapis.com/github.actions/job.duration`
+   - `custom.googleapis.com/github.actions/job.estimated_cost`
    - `custom.googleapis.com/github.actions/step.duration`
    - `custom.googleapis.com/github.actions/artifact.size` (when artifacts available)
 
@@ -374,46 +374,33 @@ custom.googleapis.com/github.actions/artifact.size
 | count
 ```
 
-**Estimated total CI costs (uses pre-calculated cost attribute):**
+**Total CI costs:**
 ```
-custom.googleapis.com/github.actions/job.duration
-| value [metric.estimated_cost_usd]
+custom.googleapis.com/github.actions/job.estimated_cost
 | sum
 ```
 
-**Monthly CI costs by runner OS:**
+**Monthly CI costs by runner type:**
 ```
-custom.googleapis.com/github.actions/job.duration
-| group_by [metric.runner.os]
-| value [metric.estimated_cost_usd]
+custom.googleapis.com/github.actions/job.estimated_cost
+| group_by [metric.runner.os, metric.runner.label]
 | sum
 ```
 
 **Most expensive workflows:**
 ```
-custom.googleapis.com/github.actions/job.duration
+custom.googleapis.com/github.actions/job.estimated_cost
 | group_by [metric.workflow.name]
-| value [metric.estimated_cost_usd]
 | sum
 | top 10
 ```
 
 **Most expensive jobs:**
 ```
-custom.googleapis.com/github.actions/job.duration
-| group_by [metric.job.name, metric.runner.os]
-| value [metric.estimated_cost_usd]
+custom.googleapis.com/github.actions/job.estimated_cost
+| group_by [metric.job.name]
 | sum
 | top 10
-```
-
-**Cost per commit (for specific branch):**
-```
-custom.googleapis.com/github.actions/job.duration
-| filter metric.git.ref_name = "main"
-| group_by [metric.git.sha]
-| value [metric.estimated_cost_usd]
-| sum
 ```
 
 ### Viewing Traces
