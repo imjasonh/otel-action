@@ -17,6 +17,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # For pull_request_target, checkout the PR head to test the PR's code
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: ./
         with:
