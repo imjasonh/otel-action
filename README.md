@@ -234,12 +234,8 @@ steps:
   - `event.name` - Event that triggered workflow (push, pull_request, etc.)
   - `event.actor` - User who triggered the workflow
   - `pull_request.number` - PR number (if applicable) *
-  - `artifacts.count` - Number of artifacts uploaded *
-  - `artifacts.total_bytes` - Total size of artifacts in bytes *
 
 \* = Optional attributes, only present when applicable
-
-**Note on artifacts:** The action attempts to list artifacts, but they are typically not available until after the workflow completes. If artifacts are found (e.g., in rare cases or future GitHub API improvements), they will be included as attributes.
 
 #### Step Duration
 - **Metric:** `github.actions.step.duration`
@@ -250,6 +246,20 @@ steps:
   - `step.number` - Step number
   - `step.status` - Status (completed, in_progress, etc.)
   - `step.conclusion` - Conclusion (success, failure, skipped, etc.)
+
+#### Artifact Size
+- **Metric:** `github.actions.artifact.size`
+- **Type:** Histogram
+- **Unit:** bytes
+- **Labels:** All job labels plus:
+  - `artifact.name` - Name of the artifact
+- **Note:** Recorded once per artifact. Only available when artifacts are found (typically not until after workflow completes)
+
+**Benefits:**
+- Track size trends for specific artifacts over time
+- Count unique artifacts by counting time series
+- Monitor total storage usage across all artifacts
+- Alert on artifact size growth
 
 ### Traces
 
@@ -285,6 +295,7 @@ Metrics will appear in Google Cloud Monitoring under custom metrics:
 3. Available metrics:
    - `custom.googleapis.com/github.actions/job.duration`
    - `custom.googleapis.com/github.actions/step.duration`
+   - `custom.googleapis.com/github.actions/artifact.size` (when artifacts available)
 
 ![Metrics in Cloud Monitoring](metrics.png)
 
@@ -330,6 +341,20 @@ custom.googleapis.com/github.actions/step.duration
 custom.googleapis.com/github.actions/job.duration
 | group_by [metric.event.name]
 | mean
+```
+
+**Artifact size over time by artifact name:**
+```
+custom.googleapis.com/github.actions/artifact.size
+| group_by [metric.artifact.name]
+| mean
+```
+
+**Count of unique artifacts being uploaded:**
+```
+custom.googleapis.com/github.actions/artifact.size
+| group_by [metric.artifact.name]
+| count
 ```
 
 ### Viewing Traces

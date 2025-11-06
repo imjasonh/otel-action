@@ -254,4 +254,66 @@ test('recordMetrics', async (t) => {
     assert.strictEqual(histogramCall.arguments[1]['job.name'], 'test-job');
     assert.strictEqual(histogramCall.arguments[1]['repository.owner'], 'test-owner');
   });
+
+  await t.test('should record artifact metrics when artifacts present', () => {
+    const mockHistogramRecord = mock.fn();
+
+    const mockMeter = {
+      createHistogram: mock.fn(() => ({ record: mockHistogramRecord })),
+    };
+
+    const metrics = {
+      workflow: 'CI',
+      job: {
+        name: 'test-job',
+        id: 12345,
+        status: 'completed',
+        conclusion: 'success',
+        durationMs: 300000,
+      },
+      steps: [],
+      repository: {
+        owner: 'test-owner',
+        repo: 'test-repo',
+        fullName: 'test-owner/test-repo',
+      },
+      run: {
+        id: 67890,
+        number: 42,
+        attempt: '1',
+      },
+      git: {
+        sha: 'abc123',
+        ref: 'refs/heads/main',
+        refName: 'main',
+        baseRef: null,
+        headRef: null,
+      },
+      event: {
+        name: 'push',
+        actor: 'test-user',
+        prNumber: null,
+      },
+      artifacts: {
+        count: 2,
+        totalBytes: 5000,
+        artifacts: [
+          { name: 'build-output', sizeBytes: 3000 },
+          { name: 'test-results', sizeBytes: 2000 },
+        ],
+      },
+    };
+
+    recordMetrics(mockMeter, metrics, 'test.prefix');
+
+    // Should record: 1 job + 2 artifacts = 3 histogram calls
+    assert.strictEqual(mockHistogramRecord.mock.calls.length, 3);
+
+    // Verify artifact metrics have artifact.name attribute
+    const artifactCalls = mockHistogramRecord.mock.calls.slice(1); // Skip job metric
+    assert.strictEqual(artifactCalls[0].arguments[0], 3000);
+    assert.strictEqual(artifactCalls[0].arguments[1]['artifact.name'], 'build-output');
+    assert.strictEqual(artifactCalls[1].arguments[0], 2000);
+    assert.strictEqual(artifactCalls[1].arguments[1]['artifact.name'], 'test-results');
+  });
 });

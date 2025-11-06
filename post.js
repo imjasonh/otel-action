@@ -40,7 +40,7 @@ async function run() {
       metrics.artifacts = {
         count: artifacts.length,
         totalBytes: artifacts.reduce((sum, a) => sum + a.sizeBytes, 0),
-        names: artifacts.map(a => a.name),
+        artifacts: artifacts, // Include full artifact details
       };
     }
 
