@@ -5,16 +5,12 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
     groups:
-      # Group OpenTelemetry packages together
-      opentelemetry:
+      # Group all packages together
+      all:
         patterns:
-          - "@opentelemetry/*"
-      # Group Google Cloud packages together
-      google-cloud:
-        patterns:
-          - "@google-cloud/*"
+          - "*"
 
   # Monitor GitHub Actions
   - package-ecosystem: "github-actions"
