@@ -258,10 +258,10 @@ test('collectMetrics', async (t) => {
     };
 
     const mockOctokit = { rest: { actions: { listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })) } } };
-    const mockContext = { 
-      repo: { owner: 'test-owner', repo: 'test-repo' }, 
-      runId: 67890, 
-      runNumber: 42, 
+    const mockContext = {
+      repo: { owner: 'test-owner', repo: 'test-repo' },
+      runId: 67890,
+      runNumber: 42,
       workflow: 'CI',
       payload: { pull_request: { number: 123 } }
     };
@@ -291,5 +291,54 @@ test('collectMetrics', async (t) => {
 
     const metrics = await collectMetrics(mockOctokit, mockContext);
     assert.strictEqual(metrics.runner.labels.length, 0);
+  });
+
+  await t.test('should find matrix job by runner name', async () => {
+    const mockJobData = {
+      jobs: [
+        {
+          id: 11111,
+          name: 'other-job',
+          status: 'completed',
+          conclusion: 'success',
+          started_at: '2025-01-01T10:00:00Z',
+          completed_at: '2025-01-01T10:05:00Z',
+          steps: [],
+        },
+        {
+          id: 22222,
+          name: 'build-matrix (0, linux)',
+          status: 'in_progress',
+          conclusion: null,
+          started_at: '2025-01-01T10:01:00Z',
+          completed_at: null,
+          runner_name: 'GitHub Actions 123',
+          steps: [
+            { name: 'Step 1', number: 1, status: 'completed', conclusion: 'success', started_at: '2025-01-01T10:01:00Z', completed_at: '2025-01-01T10:02:00Z' },
+          ],
+        },
+        {
+          id: 33333,
+          name: 'build-matrix (1, windows)',
+          status: 'queued',
+          conclusion: null,
+          started_at: '2025-01-01T10:02:00Z',
+          completed_at: null,
+          runner_name: 'GitHub Actions 456',
+          steps: [],
+        },
+      ],
+    };
+
+    const mockOctokit = { rest: { actions: { listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })) } } };
+    const mockContext = { repo: { owner: 'test-owner', repo: 'test-repo' }, runId: 67890, runNumber: 42, workflow: 'CI' };
+    process.env.GITHUB_JOB = 'build-matrix';
+    process.env.RUNNER_NAME = 'GitHub Actions 456';
+
+    const metrics = await collectMetrics(mockOctokit, mockContext);
+
+    // Should find the matrix job by matching runner name
+    assert.strictEqual(metrics.job.id, 33333);
+    assert.strictEqual(metrics.job.name, 'build-matrix (1, windows)');
   });
 });
