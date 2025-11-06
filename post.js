@@ -52,16 +52,26 @@ async function run() {
     tracerProvider = tProvider;
 
     // Record metrics
+    core.info('');
+    core.info('📊 Recording metrics...');
     recordMetrics(meter, metrics, config.metricPrefix);
 
     // Record traces
+    core.info('');
+    core.info('🔍 Recording traces...');
     recordTraces(tracer, metrics);
 
     // Force flush and shutdown to ensure data is exported
+    core.info('');
+    core.info('⬆️  Exporting data to Google Cloud...');
     await shutdown(meterProvider);
     await shutdownTracer(tracerProvider);
 
-    core.info('✓ Metrics and traces successfully exported to Google Cloud');
+    core.info('');
+    core.info('✅ Metrics and traces successfully exported to Google Cloud');
+    core.info(`   Project: ${config.gcpProjectId}`);
+    core.info(`   View metrics: https://console.cloud.google.com/monitoring/metrics-explorer?project=${config.gcpProjectId}`);
+    core.info(`   View traces: https://console.cloud.google.com/traces/list?project=${config.gcpProjectId}`);
   } catch (error) {
     core.error(`Post-action failed: ${error.message}`);
     core.error(error.stack);
