@@ -64,7 +64,7 @@ async function run() {
 
     core.info('✓ Metrics and traces successfully exported to Google Cloud');
   } catch (error) {
-    core.error(`Post-action failed: ${error.message}`);
+    core.error(`Post-action failed: ${error?.message || JSON.stringify(error)}`);
     core.error(error.stack);
 
     // Try to shutdown gracefully even on error
@@ -72,7 +72,7 @@ async function run() {
       try {
         await shutdown(meterProvider);
       } catch (shutdownError) {
-        core.error(`Error during metrics shutdown: ${shutdownError.message}`);
+        core.error(`Error during metrics shutdown: ${shutdownError?.message || JSON.stringify(shutdownError)}`);
       }
     }
 
@@ -80,18 +80,18 @@ async function run() {
       try {
         await shutdownTracer(tracerProvider);
       } catch (shutdownError) {
-        core.error(`Error during trace shutdown: ${shutdownError.message}`);
+        core.error(`Error during trace shutdown: ${shutdownError?.message || JSON.stringify(shutdownError)}`);
       }
     }
 
     // Decide whether to fail the workflow based on config
     // Note: config might not be defined if error occurred before getConfig()
     const shouldFail = config?.failOnError || false;
+    const errorMsg = error?.message || error?.toString() || 'Unknown error';
     if (shouldFail) {
-      const errorMsg = error?.message || error?.toString() || 'Unknown error';
       core.setFailed(`Observability export failed: ${errorMsg}`);
     } else {
-      core.warning('Observability export failed, but workflow will continue (set fail-on-error: true to fail on export errors)');
+      core.warning(`Observability export failed, but workflow will continue (set fail-on-error: true to fail on export errors): ${errorMsg}`);
     }
   }
 }
