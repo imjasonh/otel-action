@@ -53,10 +53,10 @@ async function run() {
     tracerProvider = tProvider;
 
     // Record metrics
-    recordMetrics(meter, metrics, config.metricPrefix);
+    recordMetrics(meter, metrics, config.metricPrefix, config.customAttributes);
 
     // Record traces
-    recordTraces(tracer, metrics);
+    recordTraces(tracer, metrics, config.customAttributes);
 
     // Force flush and shutdown to ensure data is exported
     await shutdown(meterProvider);
@@ -74,6 +74,9 @@ async function run() {
       } catch (shutdownError) {
         core.error(`Error during metrics shutdown: ${shutdownError?.message || JSON.stringify(shutdownError)}`);
       }
+      core.info('✓ Meter provider shut down successfully after error');
+    } else {
+      core.info('No meter provider to shut down after error');
     }
 
     if (tracerProvider) {
@@ -82,6 +85,9 @@ async function run() {
       } catch (shutdownError) {
         core.error(`Error during trace shutdown: ${shutdownError?.message || JSON.stringify(shutdownError)}`);
       }
+      core.info('✓ Tracer provider shut down successfully after error');
+    } else {
+      core.info('No tracer provider to shut down after error');
     }
 
     // Decide whether to fail the workflow based on config

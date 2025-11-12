@@ -30,6 +30,11 @@ jobs:
         with:
           github-token: ${{ github.token }}
           fail-on-error: 'true'
+          # Example: Add custom attributes to all metrics and traces
+          # attributes: |
+          #   team: platform
+          #   environment: production
+          #   custom.label: ${{ matrix.os }}
 
       - uses: actions/setup-node@v6
         with:

@@ -341,4 +341,62 @@ test('collectMetrics', async (t) => {
     assert.strictEqual(metrics.job.id, 33333);
     assert.strictEqual(metrics.job.name, 'build-matrix (1, windows)');
   });
+
+  await t.test('should extract workflow path from workflow_ref', async () => {
+    const mockJobData = {
+      jobs: [{
+        id: 12345,
+        name: 'test-job',
+        status: 'completed',
+        conclusion: 'success',
+        started_at: '2025-01-01T10:00:00Z',
+        completed_at: '2025-01-01T10:05:00Z',
+        steps: [],
+      }],
+    };
+
+    const mockOctokit = { rest: { actions: { listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })) } } };
+    const mockContext = {
+      repo: { owner: 'test-owner', repo: 'test-repo' },
+      runId: 67890,
+      runNumber: 42,
+      workflow: null,
+      workflow_ref: 'octocat/hello-world/.github/workflows/my-workflow.yml@refs/heads/my_branch',
+    };
+    process.env.GITHUB_JOB = 'test-job';
+
+    const metrics = await collectMetrics(mockOctokit, mockContext);
+
+    // Should extract the workflow path from workflow_ref
+    assert.strictEqual(metrics.workflow, '.github/workflows/my-workflow.yml');
+  });
+
+  await t.test('should prefer context.workflow over workflow_ref', async () => {
+    const mockJobData = {
+      jobs: [{
+        id: 12345,
+        name: 'test-job',
+        status: 'completed',
+        conclusion: 'success',
+        started_at: '2025-01-01T10:00:00Z',
+        completed_at: '2025-01-01T10:05:00Z',
+        steps: [],
+      }],
+    };
+
+    const mockOctokit = { rest: { actions: { listJobsForWorkflowRun: mock.fn(async () => ({ data: mockJobData })) } } };
+    const mockContext = {
+      repo: { owner: 'test-owner', repo: 'test-repo' },
+      runId: 67890,
+      runNumber: 42,
+      workflow: 'CI Workflow',
+      workflow_ref: 'octocat/hello-world/.github/workflows/my-workflow.yml@refs/heads/my_branch',
+    };
+    process.env.GITHUB_JOB = 'test-job';
+
+    const metrics = await collectMetrics(mockOctokit, mockContext);
+
+    // Should prefer context.workflow over parsing workflow_ref
+    assert.strictEqual(metrics.workflow, 'CI Workflow');
+  });
 });
