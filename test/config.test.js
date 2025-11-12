@@ -140,4 +140,30 @@ test('config attributes parsing', async (t) => {
     // Should not log any warnings about attributes
     assert.ok(!loggedWarnings.some(msg => msg.includes('attributes')));
   });
+
+  await t.test('should handle whitespace-only attributes input', async () => {
+    const core = require('@actions/core');
+    core.getInput = mock.fn((name) => {
+      if (name === 'attributes') {
+        return '    '; // Whitespace-only string causes yaml.parse to return null
+      }
+      return '';
+    });
+    core.getBooleanInput = mock.fn(() => false);
+
+    // Mock GoogleAuth
+    const { GoogleAuth } = require('google-auth-library');
+    const originalGetProjectId = GoogleAuth.prototype.getProjectId;
+    GoogleAuth.prototype.getProjectId = mock.fn(async () => 'test-project');
+
+    const config = require('../lib/config');
+    const result = await config.getConfig();
+
+    GoogleAuth.prototype.getProjectId = originalGetProjectId;
+
+    // Should not throw, but set customAttributes to empty object
+    assert.deepStrictEqual(result.customAttributes, {});
+    // Should have logged a warning about attributes needing to be an object
+    assert.ok(loggedWarnings.some(msg => msg.includes('Failed to parse custom attributes') && msg.includes('must be a YAML object')));
+  });
 });
