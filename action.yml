@@ -31,6 +31,9 @@ inputs:
     description: 'Fail the workflow if metrics/traces export fails (default: false)'
     required: false
     default: 'false'
+  attributes:
+    description: 'Additional custom attributes to add to metrics and traces (YAML format: key: value)'
+    required: false
 
 outputs:
   traceparent:
