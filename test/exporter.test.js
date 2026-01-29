@@ -67,6 +67,40 @@ test('createMeterProvider', async (t) => {
       /Invalid service account key JSON/
     );
   });
+
+  await t.test('should create MeterProvider with OTLP exporter when otlpEndpoint is set', () => {
+    const config = {
+      otlpEndpoint: 'localhost:4317',
+      serviceName: 'test-service',
+      serviceNamespace: 'test-namespace',
+      metricPrefix: 'test.prefix',
+    };
+
+    process.env.GITHUB_RUN_ID = '12345';
+
+    const { meterProvider, meter } = createMeterProvider(config);
+
+    assert.ok(meterProvider, 'MeterProvider should be created');
+    assert.ok(meter, 'Meter should be created');
+  });
+
+  await t.test('should prefer OTLP exporter over GCP when both are configured', () => {
+    const config = {
+      gcpProjectId: 'test-project',
+      otlpEndpoint: 'localhost:4317',
+      serviceName: 'test-service',
+      serviceNamespace: 'test-namespace',
+      metricPrefix: 'test.prefix',
+    };
+
+    process.env.GITHUB_RUN_ID = '12345';
+
+    // Should not throw - OTLP takes precedence
+    const { meterProvider, meter } = createMeterProvider(config);
+
+    assert.ok(meterProvider, 'MeterProvider should be created');
+    assert.ok(meter, 'Meter should be created');
+  });
 });
 
 test('createTracerProvider', async (t) => {
@@ -130,6 +164,40 @@ test('createTracerProvider', async (t) => {
       () => createTracerProvider(config),
       /Invalid service account key JSON/
     );
+  });
+
+  await t.test('should create TracerProvider with OTLP exporter when otlpEndpoint is set', () => {
+    const config = {
+      otlpEndpoint: 'localhost:4317',
+      serviceName: 'test-service',
+      serviceNamespace: 'test-namespace',
+      metricPrefix: 'test.prefix',
+    };
+
+    process.env.GITHUB_RUN_ID = '12345';
+
+    const { tracerProvider, tracer } = createTracerProvider(config);
+
+    assert.ok(tracerProvider, 'TracerProvider should be created');
+    assert.ok(tracer, 'Tracer should be created');
+  });
+
+  await t.test('should prefer OTLP exporter over GCP when both are configured', () => {
+    const config = {
+      gcpProjectId: 'test-project',
+      otlpEndpoint: 'localhost:4317',
+      serviceName: 'test-service',
+      serviceNamespace: 'test-namespace',
+      metricPrefix: 'test.prefix',
+    };
+
+    process.env.GITHUB_RUN_ID = '12345';
+
+    // Should not throw - OTLP takes precedence
+    const { tracerProvider, tracer } = createTracerProvider(config);
+
+    assert.ok(tracerProvider, 'TracerProvider should be created');
+    assert.ok(tracer, 'Tracer should be created');
   });
 });
 

@@ -34,6 +34,9 @@ inputs:
   attributes:
     description: 'Additional custom attributes to add to metrics and traces (YAML format: key: value)'
     required: false
+  otlp-endpoint:
+    description: 'OTLP gRPC endpoint (e.g., localhost:4317). When set, exports traces and metrics to this endpoint instead of GCP.'
+    required: false
 
 outputs:
   traceparent:
