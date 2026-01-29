@@ -27,6 +27,8 @@
     "@opentelemetry/sdk-metrics": "^2.2.0",
     "@opentelemetry/sdk-trace-base": "^2.2.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.211.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "^0.211.0",
     "google-auth-library": "^10.5.0",
     "yaml": "^2.8.1"
   },

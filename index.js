@@ -18,7 +18,11 @@ async function run() {
     const config = await getConfig();
 
     core.info(`✓ Configuration validated successfully`);
-    core.info(`  Project: ${config.gcpProjectId}`);
+    if (config.otlpEndpoint) {
+      core.info(`  OTLP endpoint: ${config.otlpEndpoint}`);
+    } else {
+      core.info(`  Project: ${config.gcpProjectId}`);
+    }
     core.info(`  Service: ${config.serviceName}`);
     core.info(`  Namespace: ${config.serviceNamespace}`);
     core.info(`  Metric prefix: ${config.metricPrefix}`);
